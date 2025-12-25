@@ -55,7 +55,7 @@ your-project-folder
 
 Open the terminal and make sure you are in your project directory. Then use git to clone this repository:
 ```commandline
-git clone https://github.com/aaa308/tv-itch50-cpp
+git clone https://github.com/aaa308-aub/tv-itch50-cpp
 ```
 
 If you don't have git, you can instead just download the files from this repository and copy them into your project.
@@ -69,13 +69,13 @@ project(your-project-name)
 
 # Place your CMake commands/other configurations here
 
-add_subdirectory(tv-itch50-cpp) # You can of course change the folder name itself and then change it here
+add_subdirectory(tv-itch50-cpp) # You can change the folder name itself and then change it here
 
 add_executable(your-project-name main.cpp)
 
 target_link_libraries(your-project-name tv_itch50_cpp)
 
-target_compile_options(your-project-name PRIVATE -O3) # Or whatever compile options you want to use
+target_compile_options(your-project-name PRIVATE -O3) # Or whatever compile options you want
 
 # If your architecture is big-endian, un-comment this command (see below for more details)
 #add_definitions(-DTV_ITCH50_CPP_BIG_ENDIAN)
@@ -126,9 +126,9 @@ using MessageVariant = tv_itch::spec::MessageVariant;
 ``tv_itch::spec``, as the name suggests, is a namespace that is a one-to-one binding of the entire ITCH spec to the
 program.
 
-All alpha fields in the spec are saved as enum classes instead of just ``char`` in order to preserve meaning of
-these fields and enforce stronger type-safety. The ``tv_itch::ios`` contains an overloaded ``to_string()`` function
-for every single enum class, to convert enum values like ``SharesOfBenificialInterest`` to strings like
+All alpha fields in the spec namespace are saved as enum classes instead of just ``char`` in order to preserve
+meaning of these fields and enforce stronger type-safety. The ``tv_itch::ios`` contains an overloaded ``to_string()``
+function for every single enum class, to convert enum values like ``SharesOfBenificialInterest`` to strings like
 ``"Shares Of Benificial Interest"``.
 
 To use the parser, you only need to know three methods. The ``record()`` method simply returns the last record (i.e.
@@ -141,9 +141,9 @@ use the ``eof()`` method.
     
 Let's make a simple program which does the following:
 1. A while-loop to parse the first 1 million messages and add them to a vector of ``MessageVariant``s
-2. Another while-loop to check if a message struct is of type ``SystemEvent``. If true, we output the
-   ``SystemEventCode`` using the ``to_string()`` function from the ``ios`` namespace.
-3. Output every single message onto ``std::cout``.
+2. A for-loop that iterates over the whole vector. For each message, we'll check if a message struct is of type
+   ``SystemEvent``. If true, we output the ``SystemEventCode`` using the ``to_string()`` function mentioned earlier.
+3. In this same for-loop, we'll output every single message onto ``std::cout``.
 
 ```c++
 #include "tv_itch/parser.hpp"
