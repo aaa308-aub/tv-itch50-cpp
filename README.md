@@ -139,7 +139,7 @@ message and sets it as the last record and returns ``true``, or returns ``false`
 ``EOF`` and the last record remains unchanged. If you want to check ``EOF`` without attempting to advance the parser,
 use the ``eof()`` method.
 
-# Example Use Case
+## Example Use Case
     
 Let's make a simple program which does the following:
 1. A while-loop to parse the first 1 million messages and add them to a vector of ``MessageVariant``s
