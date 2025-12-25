@@ -67,7 +67,9 @@ project's ``CMakeLists.txt`` should look something like this:
 cmake_minimum_required(VERSION 3.20) # CMake version 3.20 or above is required
 project(your-project-name)
 
-# Place your CMake commands/other configurations here
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # If you want
 
 add_subdirectory(tv-itch50-cpp) # You can change the folder name itself and then change it here
 
@@ -151,55 +153,56 @@ Let's make a simple program which does the following:
 #include "tv_itch/spec/messages.hpp"
 
 #include <iostream>
+#include <variant>
 #include <vector>
 
 int main() {
-    // All message structs live in the namespace spec
-    using MessageVariant = tv_itch::spec::MessageVariant;
-    using SystemEvent = tv_itch::spec::SystemEvent;
-    
-    /*
-     * Open the spec namespace to see how SystemEvent is defined.
-     * Currently it looks like this:
-     *
-     * SystemEvent {
+	// All message structs live in the namespace spec
+	using MessageVariant = tv_itch::spec::MessageVariant;
+	using SystemEvent = tv_itch::spec::SystemEvent;
+
+	/*
+	 * Open the spec namespace to see how SystemEvent is defined.
+	 * Currently, it looks like this:
+	 *
+	 * SystemEvent {
 	 *     std::uint64_t timestamp;
 	 *     std::uint16_t stock_locate;
 	 *     std::uint16_t tracking_number;
 	 *     SystemEventCode event_code;
-     * };
-     *
-     * To save space, a message struct's fields are not necessarily in
-     * the same order as the fields in the ITCH spec.
-     * 
-     * A SystemEventCode has the following enumerators:
-     * enum class SystemEventCode : char {
-     *     StartOfMessages    = 'O',
-     *     StartOfSystemHours = 'S',
-     *     StartOfMarketHours = 'Q',
-     *     EndOfMarketHours   = 'M',
-     *     EndOfSystemHours   = 'E',
-     *     EndOfMessages      = 'C',
-     * };
-     */
-    
-    using namespace tv_itch::ios;
-    
-    tv_itch::Parser p("C:/path/to/your/sample_name.NASDAQ_ITCH50");
-    std::vector<MessageVariant> vec;
-    vec.reserve(1'000'000);
-    
-    while ( p.nextRecord() && vec.size() < 1'000'000 )
-        vec.push_back( p.record() );
-    
-    for ( const MessageVariant* msg_var : vec ) {
-        if ( const auto* msg = std::get_if<SystemEvent>( &msg_var ) )
-            std::cout << to_string( msg->event_code );
-        // here you can add else-if statements for other message types if you want
-        
-        // No need to get the underlying message type for the operator<< overload below
-        // MessageVariant will dispatch accordingly at compile-time
-        std::cout << msg;
-    }
+	 * };
+	 *
+	 * To save space, a message struct's fields are not necessarily in
+	 * the same order as the fields in the ITCH spec.
+	 *
+	 * A SystemEventCode has the following enumerators:
+	 * enum class SystemEventCode : char {
+	 *     StartOfMessages    = 'O',
+	 *     StartOfSystemHours = 'S',
+	 *     StartOfMarketHours = 'Q',
+	 *     EndOfMarketHours   = 'M',
+	 *     EndOfSystemHours   = 'E',
+	 *     EndOfMessages      = 'C',
+	 * };
+	 */
+
+	using namespace tv_itch::ios;
+
+	tv_itch::Parser p("C:/Users/abdal/Downloads/01302020.NASDAQ_ITCH50");
+	std::vector<MessageVariant> vec;
+	vec.reserve(1'000'000);
+
+	while ( p.nextRecord() && vec.size() < 1'000'000 )
+		vec.push_back( p.record() );
+
+	for ( const auto& msg_var : vec ) {
+		if ( const auto* msg = std::get_if<SystemEvent>( &msg_var ) )
+			std::cout << to_string( msg->event_code ) << "\n";
+		// here you can add else-if statements for other message types if you want
+
+		// No need to get the underlying message type for the operator<< overload below
+		// MessageVariant will dispatch accordingly at compile-time
+		std::cout << msg_var << "\n";
+	}
 }
 ```
