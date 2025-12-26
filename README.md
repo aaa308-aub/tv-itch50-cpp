@@ -3,7 +3,7 @@
 ## Introduction
 
 **What is this?**\
-``TV-ITCH50-CPP`` is a lightweight, easy-to-use library for parsing **Nasdaq TotalView-ITCH 5.0** data feeds.
+``TV-ITCH50-CPP`` is a lightweight, easy-to-use C++ library for parsing **Nasdaq TotalView-ITCH 5.0** data feeds.
 
 **What's Nasdaq TotalView-ITCH 5.0 (or ITCH for short)?**\
 It is a proprietary data feed and protocol that provides the most comprehensive full order book depth for
@@ -198,7 +198,7 @@ int main() {
 	for ( const auto& msg_var : vec ) {
 		if ( const auto* msg = std::get_if<SystemEvent>( &msg_var ) )
 			std::cout << to_string( msg->event_code ) << "\n";
-		// here you can add else-if statements for other message types if you want
+		// Here you can add else-if statements for other message types if you want
 
 		// No need to get the underlying message type for the operator<< overload below
 		// MessageVariant will dispatch accordingly at compile-time
