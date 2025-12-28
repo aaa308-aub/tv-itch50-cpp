@@ -18,36 +18,21 @@ std::string format_timestamp_ns(std::uint64_t ts);
 std::string format_timestamp_sec(std::uint64_t ts);
 
 
-template <typename T>
-std::string format_price(const T value, const std::uint8_t num_decimal_points) {
-	static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::uint64_t>,
-		  "compile error: format_price must be called with uint32_t or uint64_t");
-
-	std::string s = std::to_string(value);
-	if (num_decimal_points >= s.size())
-		s.insert(0, num_decimal_points - s.size() + 1, '0');
-
-	s.insert(s.size() - num_decimal_points, ".");
-	return s;
-}
+// For 4-byte prices, which must have 4 decimal points
+std::string format_price_u32(const std::uint32_t value);
 
 
-// For MPID, stock symbols, and certain enum classes with non-char underlying type
-template <typename T>
-std::string int_to_ascii_str(const T value) {
-	static_assert(
-		std::is_integral_v<T>,
-		"compile error: int_to_ascii_str called with non-integral type");
+// For 8-byte prices, which must have 8 decimal points
+std::string format_price_u64(const std::uint64_t value);
 
-	std::string s(sizeof(T), ' ');
-	for (std::size_t i = 0; i < sizeof(T); ++i) {
-		s[i] = static_cast<char>(
-			( value >> ( 8 * (sizeof(T) - i - 1) ) ) & 0xFF
-			);
-	}
 
-	return s;
-}
+std::string to_ascii_str_u16(const std::uint16_t value);
+
+
+std::string to_ascii_str_u32(const std::uint32_t value);
+
+
+std::string to_ascii_str_u64(const std::uint64_t value);
 
 
 std::string to_string(const spec::MessageType t);
@@ -141,6 +126,69 @@ std::string to_string(const spec::InterestFlagRPII t);
 
 
 std::string to_string(const spec::EligibleForTradingReleaseFlag t);
+
+
+std::string to_string(const spec::SystemEvent& m);
+
+
+std::string to_string(const spec::StockDirectory& m);
+
+
+std::string to_string(const spec::StockTradingAction& m);
+
+
+std::string to_string(const spec::RegSHORestriction& m);
+
+
+std::string to_string(const spec::MarketParticipantPosition& m);
+
+
+std::string to_string(const spec::MWCBDeclineLevel& m);
+
+
+std::string to_string(const spec::MWCBStatus& m);
+
+
+std::string to_string(const spec::IPOQuotingPeriodUpdate& m);
+
+
+std::string to_string(const spec::LULDAuctionCollar& m);
+
+
+std::string to_string(const spec::OperationalHalt& m);
+
+
+std::string to_string(const spec::AddOrder& m);
+
+
+std::string to_string(const spec::ExecuteOrder& m);
+
+
+std::string to_string(const spec::CancelOrder& m);
+
+
+std::string to_string(const spec::ReplaceOrder& m);
+
+
+std::string to_string(const spec::NonCrossTrade& m);
+
+
+std::string to_string(const spec::CrossTrade& m);
+
+
+std::string to_string(const spec::BrokenTrade& m);
+
+
+std::string to_string(const spec::NOII& m);
+
+
+std::string to_string(const spec::RPII& m);
+
+
+std::string to_string(const spec::DLCRPriceDiscovery& m);
+
+
+std::string to_string(const spec::MessageVariant& mv);
 
 
 std::ostream& operator<<(std::ostream& out, const spec::SystemEvent& m);

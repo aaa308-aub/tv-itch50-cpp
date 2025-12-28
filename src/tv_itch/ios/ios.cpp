@@ -54,6 +54,69 @@ std::string format_timestamp_sec(std::uint64_t ts) {
 }
 
 
+// For 4-byte prices, which must have 4 decimal points
+std::string format_price_u32(const std::uint32_t value) {
+	std::string s = std::to_string(value);
+
+	if (s.size() <= 4)
+		s.insert(0, 4 - s.size() + 1, '0');
+
+	s.insert(s.size() - 4, ".");
+	return s;
+}
+
+
+// For 8-byte prices, which must have 8 decimal points
+std::string format_price_u64(const std::uint64_t value) {
+	std::string s = std::to_string(value);
+
+	if (s.size() <= 8)
+		s.insert(0, 8 - s.size() + 1, '0');
+
+	s.insert(s.size() - 8, ".");
+	return s;
+}
+
+
+std::string to_ascii_str_u16(const std::uint16_t value) {
+	std::string s(2, ' ');
+
+	for (std::size_t i = 0; i < 2; ++i) {
+		s[i] = static_cast<char>(
+			( value >> ( 8 * (2 - i - 1) ) ) & 0xFF
+			);
+	}
+
+	return s;
+}
+
+
+std::string to_ascii_str_u32(const std::uint32_t value) {
+	std::string s(4, ' ');
+
+	for (std::size_t i = 0; i < 4; ++i) {
+		s[i] = static_cast<char>(
+			( value >> ( 8 * (4 - i - 1) ) ) & 0xFF
+			);
+	}
+
+	return s;
+}
+
+
+std::string to_ascii_str_u64(const std::uint64_t value) {
+	std::string s(8, ' ');
+
+	for (std::size_t i = 0; i < 8; ++i) {
+		s[i] = static_cast<char>(
+			( value >> ( 8 * (8 - i - 1) ) ) & 0xFF
+			);
+	}
+
+	return s;
+}
+
+
 std::string to_string(const spec::MessageType t) {
 	using e = spec::MessageType;
 	switch (t) {
@@ -682,280 +745,386 @@ std::string to_string(const spec::EligibleForTradingReleaseFlag t) {
 }
 
 
+std::string to_string(const spec::SystemEvent& m) {
+	return std::string("S,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ static_cast<char>(m.event_code);
+}
+
+
+std::string to_string(const spec::StockDirectory& m) {
+	return std::string("R,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.market_category) + ","
+		+ static_cast<char>(m.financial_status) + ","
+		+ std::to_string(m.round_lot_size) + ","
+		+ static_cast<char>(m.is_round_lots_only) + ","
+		+ static_cast<char>(m.issue_classification) + ","
+		+ to_ascii_str_u16(static_cast<std::uint16_t>(m.issue_subtype)) + ","
+		+ static_cast<char>(m.authenticity) + ","
+		+ static_cast<char>(m.short_sale_threshold) + ","
+		+ static_cast<char>(m.is_ipo) + ","
+		+ static_cast<char>(m.luld_ref_price_tier) + ","
+		+ static_cast<char>(m.is_etp) + ","
+		+ std::to_string(m.etp_leverage_factor) + ","
+		+ static_cast<char>(m.is_inverse_etp);
+}
+
+
+std::string to_string(const spec::StockTradingAction& m) {
+	return std::string("H,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.trading_state) + ","
+		//+ m.reserved + ","   // Should probably skip this
+		+ to_ascii_str_u32(static_cast<std::uint32_t>(m.trading_action_reason));
+}
+
+
+std::string to_string(const spec::RegSHORestriction& m) {
+	return std::string("Y,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.reg_sho_action);
+}
+
+
+std::string to_string(const spec::MarketParticipantPosition& m) {
+	return std::string("L,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u32(m.mp_id) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.is_primary_market_maker) + ","
+		+ static_cast<char>(m.market_maker_mode) + ","
+		+ static_cast<char>(m.market_participant_state);
+}
+
+
+std::string to_string(const spec::MWCBDeclineLevel& m) {
+	return std::string("V,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ format_price_u32(m.price_level1) + ","
+		+ format_price_u32(m.price_level2) + ","
+		+ format_price_u32(m.price_level3);
+}
+
+
+std::string to_string(const spec::MWCBStatus& m) {
+	return std::string("W,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ static_cast<char>(m.breached_level);
+}
+
+
+std::string to_string(const spec::IPOQuotingPeriodUpdate& m) {
+	return std::string("K,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_timestamp_sec(m.ipo_quotation_time) + ","
+		+ static_cast<char>(m.ipo_quotation_release_qualifier) + ","
+		+ format_price_u32(m.ipo_price);
+}
+
+
+std::string to_string(const spec::LULDAuctionCollar& m) {
+	return std::string("J,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_price_u32(m.reference_price) + ","
+		+ format_price_u32(m.upper_price) + ","
+		+ format_price_u32(m.lower_price) + ","
+		+ std::to_string(m.number_of_extensions);
+}
+
+
+std::string to_string(const spec::OperationalHalt& m) {
+	return std::string("h,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.market_code) + ","
+		+ static_cast<char>(m.operational_halt_action);
+}
+
+
+std::string to_string(const spec::AddOrder& m) {
+	const bool with_mp_id = (m.mp_id != spec::DEFAULT_NON_ATTRIBUTED_MPID);
+
+	return std::string((with_mp_id) ? "F" : "A") + ","
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.order_id) + ","
+		+ static_cast<char>(m.side) + ","
+		+ std::to_string(m.shares) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_price_u32(m.price)
+		+ ((with_mp_id) ? "," + to_ascii_str_u32(m.mp_id) : "");
+}
+
+
+std::string to_string(const spec::ExecuteOrder& m) {
+	const bool with_price = (m.executed_price != 0);
+
+	return std::string((with_price) ? "C" : "E") + ","
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.order_id) + ","
+		+ std::to_string(m.executed_shares) + ","
+		+ std::to_string(m.match_number)
+		+ ((with_price) ? "," + format_price_u32(m.executed_price) : "");
+}
+
+
+std::string to_string(const spec::CancelOrder& m) {
+	const bool is_delete_order = (m.cancelled_shares == 0);
+
+	return std::string((is_delete_order) ? "D" : "X") + ","
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.order_id)
+		+ ((!is_delete_order) ? "," + std::to_string(m.cancelled_shares) : "");
+}
+
+
+std::string to_string(const spec::ReplaceOrder& m) {
+	return std::string("U,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.order_id_old) + ","
+		+ std::to_string(m.order_id_new) + ","
+		+ std::to_string(m.shares) + ","
+		+ format_price_u32(m.price);
+}
+
+
+std::string to_string(const spec::NonCrossTrade& m) {
+	return std::string("P,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.order_id) + ","
+		+ static_cast<char>(m.side) + ","
+		+ std::to_string(m.shares) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_price_u32(m.price) + ","
+		+ std::to_string(m.match_number);
+}
+
+
+std::string to_string(const spec::CrossTrade& m) {
+	return std::string("Q,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.shares) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_price_u32(m.price) + ","
+		+ std::to_string(m.match_number) + ","
+		+ static_cast<char>(m.cross_type);
+}
+
+
+std::string to_string(const spec::BrokenTrade& m) {
+	return std::string("B,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.match_number);
+}
+
+
+std::string to_string(const spec::NOII& m) {
+	return std::string("I,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ std::to_string(m.paired_shares) + ","
+		+ std::to_string(m.imbalance_shares) + ","
+		+ static_cast<char>(m.imbalance_direction) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ format_price_u32(m.far_price) + ","
+		+ format_price_u32(m.near_price) + ","
+		+ format_price_u32(m.reference_price) + ","
+		+ static_cast<char>(m.cross_type) + ","
+		+ static_cast<char>(m.price_variation_indicator);
+}
+
+
+std::string to_string(const spec::RPII& m) {
+	return std::string("N,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.interest_flag);
+}
+
+
+std::string to_string(const spec::DLCRPriceDiscovery& m) {
+	return std::string("O,")
+		+ std::to_string(m.stock_locate) + ","
+		+ std::to_string(m.tracking_number) + ","
+		+ format_timestamp_ns(m.timestamp) + ","
+		+ to_ascii_str_u64(m.stock) + ","
+		+ static_cast<char>(m.is_eligible_for_trading_release) + ","
+		+ format_price_u32(m.min_allowed_price) + ","
+		+ format_price_u32(m.max_allowed_price) + ","
+		+ format_price_u32(m.near_execution_price) + ","
+		+ format_timestamp_ns(m.near_execution_time) + ","
+		+ format_price_u32(m.lower_price_range_collar) + ","
+		+ format_price_u32(m.upper_price_range_collar);
+}
+
+
+std::string to_string(const spec::MessageVariant& mv) {
+	std::string s = "message variant failure";
+	std::visit([&](const auto& m) {
+		s = to_string(m);
+	}, mv);
+	return s;
+}
+
+
 std::ostream& operator<<(std::ostream& out, const spec::SystemEvent& m) {
-	out << "S,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< static_cast<char>(m.event_code);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::StockDirectory& m) {
-	out << "R,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.market_category) << ","
-		<< static_cast<char>(m.financial_status) << ","
-		<< m.round_lot_size << ","
-		<< static_cast<char>(m.is_round_lots_only) << ","
-		<< static_cast<char>(m.issue_classification) << ","
-		<< int_to_ascii_str(static_cast<std::uint16_t>(m.issue_subtype)) << ","
-		<< static_cast<char>(m.authenticity) << ","
-		<< static_cast<char>(m.short_sale_threshold) << ","
-		<< static_cast<char>(m.is_ipo) << ","
-		<< static_cast<char>(m.luld_ref_price_tier) << ","
-		<< static_cast<char>(m.is_etp) << ","
-		<< m.etp_leverage_factor << ","
-		<< static_cast<char>(m.is_inverse_etp);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::StockTradingAction& m) {
-	out << "H,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.trading_state) << ","
-		//<< m.reserved << ","   // Should probably skip this
-		<< int_to_ascii_str(static_cast<std::uint16_t>(m.trading_action_reason));
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::RegSHORestriction& m) {
-	out << "Y,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.reg_sho_action);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::MarketParticipantPosition& m) {
-	out << "L,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.mp_id) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.is_primary_market_maker) << ","
-		<< static_cast<char>(m.market_maker_mode) << ","
-		<< static_cast<char>(m.market_participant_state);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::MWCBDeclineLevel& m) {
-	out << "V,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< format_price(m.price_level1, 8) << ","
-		<< format_price(m.price_level2, 8) << ","
-		<< format_price(m.price_level3, 8);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::MWCBStatus& m) {
-	out << "W,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< static_cast<char>(m.breached_level);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::IPOQuotingPeriodUpdate& m) {
-	out << "K,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< format_timestamp_sec(m.ipo_quotation_time) << ","
-		<< static_cast<char>(m.ipo_quotation_release_qualifier) << ","
-		<< format_price(m.ipo_price, 4);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::LULDAuctionCollar& m) {
-	out << "J,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< format_price(m.reference_price, 4) << ","
-		<< format_price(m.upper_price, 4) << ","
-		<< format_price(m.lower_price, 4) << ","
-		<< m.number_of_extensions;
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::OperationalHalt& m) {
-	out << "h,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.market_code) << ","
-		<< static_cast<char>(m.operational_halt_action);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::AddOrder& m) {
-	const bool with_mp_id = (m.mp_id != spec::DEFAULT_NON_ATTRIBUTED_MPID);
-
-		out << ((with_mp_id) ? "F" : "A") << ","
-			<< m.stock_locate << ","
-			<< m.tracking_number << ","
-			<< format_timestamp_ns(m.timestamp) << ","
-			<< m.order_id << ","
-			<< static_cast<char>(m.side) << ","
-			<< m.shares << ","
-			<< int_to_ascii_str(m.stock) << ","
-			<< format_price(m.price, 4);
-		if (with_mp_id)
-			out << "," << int_to_ascii_str(m.mp_id);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::ExecuteOrder& m) {
-	const bool with_price = (m.executed_price != 0);
-
-	out << ((with_price) ? "C" : "E") << ","
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.order_id << ","
-		<< m.executed_shares << ","
-		<< m.match_number;
-	if (with_price)
-		out << "," << format_price(m.executed_price, 4);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::CancelOrder& m) {
-	const bool is_delete_order = (m.cancelled_shares == 0);
-
-	out << ((is_delete_order) ? "D" : "X") << ","
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.order_id;
-	if (!is_delete_order)
-		out << "," << m.cancelled_shares;
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::ReplaceOrder& m) {
-	out << "U,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.order_id_old << ","
-		<< m.order_id_new << ","
-		<< m.shares << ","
-		<< format_price(m.price, 4);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::NonCrossTrade& m) {
-	out << "P,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.order_id << ","
-		<< static_cast<char>(m.side) << ","
-		<< m.shares << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< format_price(m.price, 4) << ","
-		<< m.match_number;
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::CrossTrade& m) {
-	out << "Q,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.shares << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< format_price(m.price, 4) << ","
-		<< m.match_number << ","
-		<< static_cast<char>(m.cross_type);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::BrokenTrade& m) {
-	out << "B,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.match_number;
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::NOII& m) {
-	out << "I,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< m.paired_shares << ","
-		<< m.imbalance_shares << ","
-		<< static_cast<char>(m.imbalance_direction) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< format_price(m.far_price, 4) << ","
-		<< format_price(m.near_price, 4) << ","
-		<< format_price(m.reference_price, 4) << ","
-		<< static_cast<char>(m.cross_type) << ","
-		<< static_cast<char>(m.price_variation_indicator);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::RPII& m) {
-	out << "N,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.interest_flag);
+	out << to_string(m);
 	return out;
 }
 
 
 std::ostream& operator<<(std::ostream& out, const spec::DLCRPriceDiscovery& m) {
-	out << "O,"
-		<< m.stock_locate << ","
-		<< m.tracking_number << ","
-		<< format_timestamp_ns(m.timestamp) << ","
-		<< int_to_ascii_str(m.stock) << ","
-		<< static_cast<char>(m.is_eligible_for_trading_release) << ","
-		<< format_price(m.min_allowed_price, 4) << ","
-		<< format_price(m.max_allowed_price, 4) << ","
-		<< format_price(m.near_execution_price, 4) << ","
-		<< format_timestamp_ns(m.near_execution_time) << ","
-		<< format_price(m.lower_price_range_collar, 4) << ","
-		<< format_price(m.upper_price_range_collar, 4);
+	out << to_string(m);
 	return out;
 }
 
