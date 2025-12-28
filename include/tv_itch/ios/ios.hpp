@@ -5,10 +5,8 @@
 #include "tv_itch/spec/messages.hpp"
 
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
-#include <type_traits>
 
 
 namespace tv_itch::ios {
