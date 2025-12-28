@@ -34,9 +34,9 @@ on other operating systems like macOS or FreeBSD, as no testing was done on thos
 It's simple, fast and easy to reason about: the parser uses a custom and lightweight memory map, which is basically
 a map of virtual addresses to your input data file. This way, we can bypass costly I/O calls and avoid storing chunks
 of the data into the RAM and directly use pointers instead. The rest is just simple and clean iteration through the
-data file and storing each message in a struct, whose type corresponds to the message type. Note that all structs
-are **not packed**, in contrast with other parser designs, because we want to preserve predictability of the output
-and avoid compiler-specific optimizations. No compiler extensions were used either.
+data file and storing each message in a struct, whose type corresponds to the message type. Since this parser is
+meant to be general-purpose, **all structs are not packed, and compiler extensions/other compiler-specific
+optimizations are generally avoided,** apart from built-in byteswap functions.
 
 **Where can I get a sample of ITCH data?**\
 You may not want to pay fees for this kind of data. Some free samples are provided [here](
@@ -67,7 +67,7 @@ project's ``CMakeLists.txt`` should look something like this:
 cmake_minimum_required(VERSION 3.20) # CMake version 3.20 or above is required
 project(your-project-name)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17) # C++17 or above is required
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF) # If you want
 
@@ -125,13 +125,13 @@ The parser returns ``MessageVariant`` -- a ``std::variant`` of all message struc
 using MessageVariant = tv_itch::spec::MessageVariant;
 ```
 
-``tv_itch::spec``, as the name suggests, is a namespace that is a one-to-one binding of the entire ITCH spec to the
+The namespace ``tv_itch::spec``, as the name suggests, is a one-to-one binding of the entire ITCH spec to the
 program.
 
 All alpha fields in the spec namespace are saved as enum classes instead of just ``char`` in order to preserve
 meaning of these fields and enforce stronger type-safety. The ``tv_itch::ios`` contains an overloaded ``to_string()``
-function for every single enum class, to convert enum values like ``SharesOfBenificialInterest`` to strings like
-``"Shares Of Benificial Interest"``.
+function for every single enum class and message struct, to convert enum values like ``SharesOfBenificialInterest``
+to strings like ``"Shares Of Benificial Interest"`` or to format messages (as comma-separated values).
 
 To use the parser, you only need to know three methods. The ``record()`` method simply returns the last record (i.e.
 message) parsed. This same record will be returned until you call the ``nextRecord()`` method, which parses the next
@@ -172,8 +172,9 @@ int main() {
 	 *     SystemEventCode event_code;
 	 * };
 	 *
-	 * To save space, a message struct's fields are not necessarily in
-	 * the same order as the fields in the ITCH spec.
+	 * To save space, a message struct's fields are stored from
+	 * largest to smallest in bytes -- not necessarily in
+	 * the same order as they're listed in the ITCH spec.
 	 *
 	 * A SystemEventCode has the following enumerators:
 	 * enum class SystemEventCode : char {
@@ -200,8 +201,9 @@ int main() {
 			std::cout << to_string( msg->event_code ) << "\n";
 		// Here you can add else-if statements for other message types if you want
 
-		// No need to get the underlying message type for the operator<< overload below
-		// MessageVariant will dispatch accordingly at compile-time
+		// No need to get the underlying message type for the operator<< overload
+		// below. MessageVariant will dispatch accordingly at compile-time. It is
+		// recommended to be familiar with std::variant and its methods.
 		std::cout << msg_var << "\n";
 	}
 }
