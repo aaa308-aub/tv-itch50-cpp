@@ -88,6 +88,13 @@ std::string to_ascii_str_u16(const std::uint16_t value) {
 			);
 	}
 
+	const auto last = s.find_last_not_of(' ');
+	if (last != std::string::npos) {
+		s.erase(last + 1);
+	} else {
+		s.clear();
+	}
+
 	return s;
 }
 
@@ -101,6 +108,13 @@ std::string to_ascii_str_u32(const std::uint32_t value) {
 			);
 	}
 
+	const auto last = s.find_last_not_of(' ');
+	if (last != std::string::npos) {
+		s.erase(last + 1);
+	} else {
+		s.clear();
+	}
+
 	return s;
 }
 
@@ -112,6 +126,13 @@ std::string to_ascii_str_u64(const std::uint64_t value) {
 		s[i] = static_cast<char>(
 			( value >> ( 8 * (8 - i - 1) ) ) & 0xFF
 			);
+	}
+
+	const auto last = s.find_last_not_of(' ');
+	if (last != std::string::npos) {
+		s.erase(last + 1);
+	} else {
+		s.clear();
 	}
 
 	return s;
@@ -508,7 +529,8 @@ std::string to_string(const spec::TradingActionReason t) {
 std::string to_string(const spec::RegSHOAction t) {
 	using e = spec::RegSHOAction;
 	switch (t) {
-	case e::NoPriceTest:                                  return "No Price Test In Place";
+	case e::NoPriceTest:
+		return "No Price Test In Place";
 	case e::ShortSalePriceTestRestriction:
 		return "Short Sale Price Test Restriction Due to Intraday Price Drop";
 	case e::ShortSalePriceTestRestrictionRemainsInEffect:

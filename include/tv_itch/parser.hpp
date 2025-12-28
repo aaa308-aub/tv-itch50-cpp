@@ -10,12 +10,10 @@
 #include "tv_itch/mmap/mmap.hpp"
 #include "tv_itch/spec/alpha_fields.hpp"
 #include "tv_itch/spec/messages.hpp"
-#include "tv_itch/spec/message_lengths.hpp"
-#include "tv_itch/utils/utils.hpp"
+#include "tv_itch/util/util.hpp"
 
 
 #include <cstdint>
-#include <cstdlib>
 #include <type_traits>
 
 

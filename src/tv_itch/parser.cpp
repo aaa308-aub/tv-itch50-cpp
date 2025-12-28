@@ -2,17 +2,18 @@
 #include "tv_itch/mmap/mmap.hpp"
 #include "tv_itch/spec/alpha_fields.hpp"
 #include "tv_itch/spec/messages.hpp"
-#include "tv_itch/spec/message_lengths.hpp"
+#include "tv_itch/util/util.hpp"
 
 
-//#define TV_ITCH50_CPP_DEBUG
+#if defined(DEBUG) || defined(_DEBUG) || !defined(NDEBUG)
+#define TV_ITCH50_CPP_DEBUG
+#endif
 
 
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <type_traits>
 
 
 namespace tv_itch {
@@ -79,7 +80,7 @@ spec::MessageVariant Parser::parseNextMessage() noexcept {
 // the length is correct. Outside debug mode, skips first 2 bytes and gets message type directly.
 [[nodiscard]] spec::MessageType Parser::getMessageType() noexcept {
 #ifdef TV_ITCH50_CPP_DEBUG
-	const auto message_length = readAndAdvance<std::uint16_t>();
+	const auto message_length = read_and_advance_u16();
 	const auto message_type = readEnumAndAdvance<MessageType>();
 	const auto canonical_length = spec::getMessageLength(message_type);
 
@@ -106,7 +107,7 @@ spec::MessageVariant Parser::parseNextMessage() noexcept {
 	mmap_ptr += 2;
 
 #ifdef TV_ITCH50_CPP_LITTLE_ENDIAN
-	return utils::byte_swap_u16(value);
+	return util::byte_swap_u16(value);
 #else
 	return value;
 #endif
@@ -118,7 +119,7 @@ spec::MessageVariant Parser::parseNextMessage() noexcept {
 	mmap_ptr += 4;
 
 #ifdef TV_ITCH50_CPP_LITTLE_ENDIAN
-	return utils::byte_swap_u32(value);
+	return util::byte_swap_u32(value);
 #else
 	return value;
 #endif
@@ -130,7 +131,7 @@ spec::MessageVariant Parser::parseNextMessage() noexcept {
 	mmap_ptr += 8;
 
 #ifdef TV_ITCH50_CPP_LITTLE_ENDIAN
-	return utils::byte_swap_u64(value);
+	return util::byte_swap_u64(value);
 #else
 	return value;
 #endif
@@ -143,7 +144,7 @@ spec::MessageVariant Parser::parseNextMessage() noexcept {
 
 #ifdef TV_ITCH50_CPP_LITTLE_ENDIAN
 	value <<= 16;
-	return utils::byte_swap_u64(value);
+	return util::byte_swap_u64(value);
 #else
 	return value;
 #endif
@@ -307,7 +308,7 @@ spec::MessageVariant Parser::parseAddOrder(const bool with_mp_id) noexcept {
 	message.stock = read_and_advance_u64();
 	message.price = read_and_advance_u32();
 	message.mp_id = (with_mp_id) ? read_and_advance_u32()
-								: spec::DEFAULT_NON_ATTRIBUTED_MPID;
+								 : spec::DEFAULT_NON_ATTRIBUTED_MPID;
 
 	return message;
 }

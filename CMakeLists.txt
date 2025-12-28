@@ -10,8 +10,6 @@ file(GLOB_RECURSE SOURCES
         "src/tv_itch/*.cpp"
         "src/tv_itch/ios/*.cpp"
         "src/tv_itch/mmap/*.cpp"
-        "src/tv_itch/spec/*.cpp"
-        "src/tv_itch/utils/*.cpp"
 )
 
 add_library(tv_itch50_cpp STATIC ${SOURCES})
