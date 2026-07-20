@@ -7,7 +7,7 @@ Since ITCH covers thousands of stocks listed across Nasdaq, many of which have a
 [Data samples here](https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/).
 
 ## Requirements
-C++20 or above is required, with CMake 3.20 or above if you're using CMake. **This library has no third-party library requirements or even compiler extensions.** Supported on both Windows and Linux. Theoretically supported on macOS, but no tests were done there.
+C++20 or above is required, with CMake 3.20 or above if you're using CMake. **This library has no third-party library requirements or even compiler extensions.** Support for both Windows and Linux. Should theoretically work on macOS, but no tests were done there.
 
 ## Build Instructions using CMake
 Let's keep things simple and not have a headache with build systems. Suppose your project looks like:
@@ -112,6 +112,6 @@ Notice:
 
 ``BenchmarkAllUndef (~6.2 GB/s):`` Benchmark with an empty handler -- no dispatch at every message.\
 ``BenchmarkAllEmpty (~3.4 GB/s):`` Benchmark with an empty handler but still dispatch (switch). This drop is not surprising; the parser's only job in ``BenchmarkAllUndef`` is to just "walk" the file cache, so a switch is relatively expensive now -- even if replaced with a jump table.\
-``BenchmarkAllCopy (~2.6 GB/s):`` Benchmark with a handler that copies every single message -- all fields.\
+``BenchmarkAllCopy (~2.6 GB/s):`` Benchmark with a handler that copies every single message -- all fields.
 
 ![](assets/benchmark_sc.png)
