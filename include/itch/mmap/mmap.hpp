@@ -1,21 +1,20 @@
 #ifndef TV_ITCH50_CPP_MMAP_HPP
 #define TV_ITCH50_CPP_MMAP_HPP
 
-
 #include <cstddef>
 #include <cstdint>
 #include <string>
-
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+namespace itch::mmap {
 
-namespace tv_itch::mmap {
-// Note that the memory-map classes below are read-only and the data() method returns pointer to const uint8_t
+// Note that the mmap classes below are read-only and the data() method returns pointer to const uint8_t.
 #ifdef _WIN32
 class MemoryMapWindows {
+
 public:
 	explicit MemoryMapWindows(const std::string& path);
 
@@ -35,11 +34,12 @@ private:
 	HANDLE mapping = nullptr;
 	void* data_ = nullptr;
 	std::size_t size_ = 0;
-};
 
+}; // class MemoryMapWindows
 
 #else
 class MemoryMapPosix {
+
 public:
 	explicit MemoryMapPosix(const std::string& path);
 
@@ -58,16 +58,16 @@ private:
 	int fd = -1;
 	void* data_ = nullptr;
 	std::size_t size_ = 0;
-};
-#endif
 
+}; // class MemoryMapPosix
+#endif
 
 #ifdef _WIN32
 using MemoryMap = MemoryMapWindows;
 #else
 using MemoryMap = MemoryMapPosix;
 #endif
-}
 
+} // namespace mmap
 
-#endif
+#endif // TV_ITCH50_CPP_MMAP_HPP

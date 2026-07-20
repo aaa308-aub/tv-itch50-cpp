@@ -1,0 +1,313 @@
+#include "benchmark/benchmark.h"
+#include "itch/parser.hpp"
+
+#include <cstdint>
+#include <string>
+
+const std::string BENCHMARK_FILEPATH = "./01302020.NASDAQ_ITCH50";
+
+// Note: a mock run of the parser is done at every start of this process to make
+// sure the cache is warm. We want to benchmark the parser, not the disk.
+
+// This handler makes it so that Parser::callHandler's contents are eliminated as
+// dead code. The switch statement will be DCE'd too, hence the parser is just
+// walking the file cache.
+struct HandlerAllUndef {}; // HandlerAllUndef
+
+// This handler forces the switch statement to compile, but without any operation at
+// every case.
+struct HandlerAllEmpty {
+	std::uint64_t i{1}; // DoNotOptimize(view) doesn't work, this is a cheap alternative.
+
+    void onSystemEvent(const itch::spec::view::SystemEventView& view) noexcept {
+    	i <<= 1;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onStockDirectory(const itch::spec::view::StockDirectoryView& view) noexcept {
+    	i <<= 2;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onStockTradingAction(const itch::spec::view::StockTradingActionView& view) noexcept {
+    	i <<= 3;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onRegSHORestriction(const itch::spec::view::RegSHORestrictionView& view) noexcept {
+    	i <<= 4;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onMarketParticipantPosition(const itch::spec::view::MarketParticipantPositionView& view) noexcept {
+    	i <<= 5;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onMWCBDeclineLevel(const itch::spec::view::MWCBDeclineLevelView& view) noexcept {
+    	i <<= 6;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onMWCBStatus(const itch::spec::view::MWCBStatusView& view) noexcept {
+    	i <<= 7;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onIPOQuotingPeriodUpdate(const itch::spec::view::IPOQuotingPeriodUpdateView& view) noexcept {
+    	i <<= 8;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onLULDAuctionCollar(const itch::spec::view::LULDAuctionCollarView& view) noexcept {
+    	i <<= 9;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onOperationalHalt(const itch::spec::view::OperationalHaltView& view) noexcept {
+    	i <<= 10;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onAddOrder(const itch::spec::view::AddOrderView& view) noexcept {
+    	i <<= 11;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onExecuteOrder(const itch::spec::view::ExecuteOrderView& view) noexcept {
+    	i <<= 12;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onCancelOrder(const itch::spec::view::CancelOrderView& view) noexcept {
+    	i <<= 13;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onReplaceOrder(const itch::spec::view::ReplaceOrderView& view) noexcept {
+    	i <<= 14;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onNonCrossTrade(const itch::spec::view::NonCrossTradeView& view) noexcept {
+    	i <<= 15;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onCrossTrade(const itch::spec::view::CrossTradeView& view) noexcept {
+    	i <<= 16;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onBrokenTrade(const itch::spec::view::BrokenTradeView& view) noexcept {
+    	i <<= 17;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onNOII(const itch::spec::view::NOIIView& view) noexcept {
+    	i <<= 18;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onRPII(const itch::spec::view::RPIIView& view) noexcept {
+    	i <<= 19;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onDLCRPriceDiscovery(const itch::spec::view::DLCRPriceDiscoveryView& view) noexcept {
+    	i <<= 20;
+        benchmark::DoNotOptimize(i);
+    }
+
+}; // HandlerAllEmpty
+
+// This handler makes an unbox() call on every message returned. Obviously this stalls
+// the parser significantly, so if you're doing something like this, do it async.
+struct HandlerAllCopy {
+
+    void onSystemEvent(const itch::spec::view::SystemEventView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onStockDirectory(const itch::spec::view::StockDirectoryView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onStockTradingAction(const itch::spec::view::StockTradingActionView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onRegSHORestriction(const itch::spec::view::RegSHORestrictionView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onMarketParticipantPosition(const itch::spec::view::MarketParticipantPositionView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onMWCBDeclineLevel(const itch::spec::view::MWCBDeclineLevelView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onMWCBStatus(const itch::spec::view::MWCBStatusView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onIPOQuotingPeriodUpdate(const itch::spec::view::IPOQuotingPeriodUpdateView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onLULDAuctionCollar(const itch::spec::view::LULDAuctionCollarView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onOperationalHalt(const itch::spec::view::OperationalHaltView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onAddOrder(const itch::spec::view::AddOrderView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onExecuteOrder(const itch::spec::view::ExecuteOrderView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onCancelOrder(const itch::spec::view::CancelOrderView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onReplaceOrder(const itch::spec::view::ReplaceOrderView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onNonCrossTrade(const itch::spec::view::NonCrossTradeView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onCrossTrade(const itch::spec::view::CrossTradeView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onBrokenTrade(const itch::spec::view::BrokenTradeView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onNOII(const itch::spec::view::NOIIView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onRPII(const itch::spec::view::RPIIView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onDLCRPriceDiscovery(const itch::spec::view::DLCRPriceDiscoveryView& view) noexcept {
+        auto msg = view.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+}; // HandlerAllCopy
+
+// There's a lot of potential redundancy in these benchmarks, but I guess we're not
+// trying to write good code so much as preventing the compiler from doing its job.
+
+static void warmCache() {
+	static bool is_already_warmed = false;
+	if (is_already_warmed) {
+		return;
+	} else {
+		is_already_warmed = true;
+	}
+
+	std::string path = BENCHMARK_FILEPATH;
+	benchmark::DoNotOptimize(path);
+
+	HandlerAllUndef h;
+	itch::Parser p(path, h);
+	std::uint64_t i = 0;
+	while (p.next()) {
+		++i;
+	}
+	benchmark::DoNotOptimize(i);
+}
+
+static void benchmarkAllUndef(benchmark::State& state) {
+	warmCache();
+
+	std::string path = BENCHMARK_FILEPATH;
+	benchmark::DoNotOptimize(path);
+
+	for (auto _ : state) { // This runs a timer.
+    	HandlerAllUndef h;
+     	itch::Parser p(path, h);
+      	std::uint64_t i = 0; // May be redundant.
+
+      	while (p.next()) {
+        	p.callHandler();
+         	++i;
+        }
+
+       	benchmark::DoNotOptimize(i);
+        benchmark::ClobberMemory();
+   }
+}
+
+static void benchmarkAllEmpty(benchmark::State& state) {
+	warmCache();
+
+	std::string path = BENCHMARK_FILEPATH;
+	benchmark::DoNotOptimize(path);
+
+	for (auto _ : state) {
+    	HandlerAllEmpty h;
+     	itch::Parser p(path, h);
+
+      	while (p.next()) {
+        	p.callHandler();
+        }
+
+        benchmark::ClobberMemory();
+   }
+}
+
+static void benchmarkAllCopy(benchmark::State& state) {
+	warmCache();
+
+	std::string path = BENCHMARK_FILEPATH;
+	benchmark::DoNotOptimize(path);
+
+	for (auto _ : state) {
+    	HandlerAllCopy h;
+     	itch::Parser p(path, h);
+
+      	while (p.next()) {
+        	p.callHandler();
+        }
+
+        benchmark::ClobberMemory();
+   }
+}
+
+BENCHMARK(benchmarkAllUndef);
+BENCHMARK(benchmarkAllEmpty);
+BENCHMARK(benchmarkAllCopy) ;
+BENCHMARK_MAIN()            ;

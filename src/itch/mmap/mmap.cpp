@@ -1,24 +1,23 @@
-#include "tv_itch/mmap/mmap.hpp"
-
+#include "itch/mmap/mmap.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <stdexcept>
 #include <string>
 
-
 #ifdef _WIN32
+#include <cstdint>
 #include <windows.h>
 #else
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#endif
+#endif // _WIN32
 
+namespace itch::mmap {
 
-namespace tv_itch::mmap {
-// Note that the memory-map classes below are read-only and the data() method returns pointer to const uint8_t
+// Note that the memory-map classes below are read-only and the data() method returns
+// a pointer to const uint8_t.
 #ifdef _WIN32
 MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 	file = CreateFileA(
@@ -27,7 +26,7 @@ MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 	FILE_SHARE_READ,
 	nullptr,
 	OPEN_EXISTING,
-	FILE_ATTRIBUTE_NORMAL,
+	FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
 	nullptr
 	);
 	if (file == INVALID_HANDLE_VALUE)
@@ -76,7 +75,6 @@ MemoryMapWindows::~MemoryMapWindows() {
 	if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
 }
 
-
 #else
 MemoryMapPosix::MemoryMapPosix(const std::string& path) {
 	fd = ::open(path.c_str(), O_RDONLY);
@@ -105,6 +103,8 @@ MemoryMapPosix::MemoryMapPosix(const std::string& path) {
 		::close(fd);
 		throw std::runtime_error("MemoryMapPosix error: mmap failed");
 	}
+
+	::madvise(data_, size_, MADV_SEQUENTIAL);
 }
 
 MemoryMapPosix::~MemoryMapPosix() {
@@ -113,5 +113,6 @@ MemoryMapPosix::~MemoryMapPosix() {
 	if (fd != -1)
 		::close(fd);
 }
-#endif
-}
+#endif // _WIN32
+
+} // namespace itch::mmap
