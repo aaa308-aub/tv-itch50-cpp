@@ -1,7 +1,6 @@
 #ifndef TV_ITCH50_CPP_IOS_HPP
 #define TV_ITCH50_CPP_IOS_HPP
 
-#include "itch/spec/alpha_fields.hpp"
 #include "itch/spec/messages.hpp"
 
 #include <cstdint>
@@ -10,19 +9,13 @@
 
 namespace itch::ios {
 
-template <typename T>
-std::string enum_8b_to_str(T e) {
-	static_assert(std::is_enum_v<T> && sizeof(T) == 1);
-	return std::string(1, static_cast<unsigned char>(e));
-}
-
-// Format: HH:MM:SS.NNNNNNNNN
+// Treats input as nanoseconds. Format: HH:MM:SS.NNNNNNNNN
 std::string format_timestamp_ns(std::uint64_t ts);
 
-// Format: HH:MM:SS
+// Treats input as seconds. Format: HH:MM:SS
 std::string format_timestamp_sec(std::uint64_t ts);
 
-// 4-byte prices have 4 decimal points, 8-byte prices have 8.
+// 4-byte prices have 4 decimal points, 8-byte prices have 8
 template <typename T>
 std::string format_price(const T value) {
 	constexpr std::size_t decimals =
@@ -37,13 +30,15 @@ std::string format_price(const T value) {
 	return s;
 }
 
-// Turns uint to string of chars, padded to the right with spaces as in spec.
+// Turns uint to left-justified string of chars, padded to the right with spaces.
 template <typename T>
 std::string to_str_padded(const T value) {
 
 	static_assert(std::is_same_v<T, std::uint16_t> ||
 	              std::is_same_v<T, std::uint32_t> ||
-	              std::is_same_v<T, std::uint64_t>);
+	              std::is_same_v<T, std::uint64_t>,
+				  "to_str_padded type must be uint16, uint32 or uint64"
+	);
 
 	std::string s(sizeof(T), ' ');
 	for (std::size_t i = 0; i < sizeof(T); ++i) {
@@ -52,149 +47,166 @@ std::string to_str_padded(const T value) {
 	return s;
 }
 
-std::string to_string(const spec::MessageType t);
+std::string to_string(const spec::SystemEvent& m, const char sep = ',');
 
-std::string to_string(const spec::Side t);
+std::string to_string(const spec::StockDirectory& m, const char sep = ',');
 
-std::string to_string(const spec::SystemEventCode t);
+std::string to_string(const spec::StockTradingAction& m, const char sep = ',');
 
-std::string to_string(const spec::MarketCategory t);
+std::string to_string(const spec::RegSHORestriction& m, const char sep = ',');
 
-std::string to_string(const spec::FinancialStatus t);
+std::string to_string(const spec::MarketParticipantPosition& m, const char sep = ',');
 
-std::string to_string(const spec::RoundLotsOnlyFlag t);
+std::string to_string(const spec::MWCBDeclineLevel& m, const char sep = ',');
 
-std::string to_string(const spec::IssueClassification t);
+std::string to_string(const spec::MWCBStatus& m, const char sep = ',');
 
-std::string to_string(const spec::IssueSubType t);
+std::string to_string(const spec::IPOQuotingPeriodUpdate& m, const char sep = ',');
 
-std::string to_string(const spec::Authenticity t);
+std::string to_string(const spec::LULDAuctionCollar& m, const char sep = ',');
 
-std::string to_string(const spec::ShortSaleThreshold t);
+std::string to_string(const spec::OperationalHalt& m, const char sep = ',');
 
-std::string to_string(const spec::IPOFlag t);
+std::string to_string(const spec::AddOrder& m, const char sep = ',');
 
-std::string to_string(const spec::LULDRefPriceTier t);
+std::string to_string(const spec::AddOrderWithMPID& m, const char sep = ',');
 
-std::string to_string(const spec::ETPFlag t);
+std::string to_string(const spec::ExecuteOrder& m, const char sep = ',');
 
-std::string to_string(const spec::InverseETPFlag t);
+std::string to_string(const spec::ExecuteOrderWithPrice& m, const char sep = ',');
 
-std::string to_string(const spec::StockTradingState t);
+std::string to_string(const spec::CancelOrder& m, const char sep = ',');
 
-std::string to_string(const spec::TradingActionReason t);
+std::string to_string(const spec::DeleteOrder& m, const char sep = ',');
 
-std::string to_string(const spec::RegSHOAction t);
+std::string to_string(const spec::ReplaceOrder& m, const char sep = ',');
 
-std::string to_string(const spec::PrimaryMarketMakerFlag t);
+std::string to_string(const spec::NonCrossTrade& m, const char sep = ',');
 
-std::string to_string(const spec::MarketMakerMode t);
+std::string to_string(const spec::CrossTrade& m, const char sep = ',');
 
-std::string to_string(const spec::MarketParticipantState t);
+std::string to_string(const spec::BrokenTrade& m, const char sep = ',');
 
-std::string to_string(const spec::MWCBBreachLevel t);
+std::string to_string(const spec::NetOrderImbalance& m, const char sep = ',');
 
-std::string to_string(const spec::IPOQuotationReleaseQualifier t);
+std::string to_string(const spec::RetailPriceImprovement& m, const char sep = ',');
 
-std::string to_string(const spec::MarketCode t);
+std::string to_string(const spec::DLCRPriceDiscovery& m, const char sep = ',');
 
-std::string to_string(const spec::OperationalHaltAction t);
+inline std::ostream& operator<<(std::ostream& out, const spec::SystemEvent& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::PrintableFlag t);
+inline std::ostream& operator<<(std::ostream& out, const spec::StockDirectory& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::CrossType t);
+inline std::ostream& operator<<(std::ostream& out, const spec::StockTradingAction& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::ImbalanceDirection t);
+inline std::ostream& operator<<(std::ostream& out, const spec::RegSHORestriction& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::PriceVariationPercentage t);
+inline std::ostream& operator<<(std::ostream& out, const spec::MarketParticipantPosition& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::InterestFlagRPII t);
+inline std::ostream& operator<<(std::ostream& out, const spec::MWCBDeclineLevel& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::EligibleForTradingReleaseFlag t);
+inline std::ostream& operator<<(std::ostream& out, const spec::MWCBStatus& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::SystemEvent& m);
+inline std::ostream& operator<<(std::ostream& out, const spec::IPOQuotingPeriodUpdate& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::StockDirectory& m);
+inline std::ostream& operator<<(std::ostream& out, const spec::LULDAuctionCollar& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::StockTradingAction& m);
+inline std::ostream& operator<<(std::ostream& out, const spec::OperationalHalt& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::RegSHORestriction& m);
+inline std::ostream& operator<<(std::ostream& out, const spec::AddOrder& m) {
+	out << to_string(m);
+	return out;
+}
 
-std::string to_string(const spec::MarketParticipantPosition& m);
-
-std::string to_string(const spec::MWCBDeclineLevel& m);
-
-std::string to_string(const spec::MWCBStatus& m);
-
-std::string to_string(const spec::IPOQuotingPeriodUpdate& m);
-
-std::string to_string(const spec::LULDAuctionCollar& m);
-
-std::string to_string(const spec::OperationalHalt& m);
-
-std::string to_string(const spec::AddOrder& m);
-
-std::string to_string(const spec::ExecuteOrder& m);
-
-std::string to_string(const spec::CancelOrder& m);
-
-std::string to_string(const spec::ReplaceOrder& m);
-
-std::string to_string(const spec::NonCrossTrade& m);
-
-std::string to_string(const spec::CrossTrade& m);
-
-std::string to_string(const spec::BrokenTrade& m);
-
-std::string to_string(const spec::NOII& m);
-
-std::string to_string(const spec::RPII& m);
-
-std::string to_string(const spec::DLCRPriceDiscovery& m);
-
-std::string to_string(const spec::MessageVariant& mv);
-
-std::ostream& operator<<(std::ostream& out, const spec::SystemEvent& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::StockDirectory& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::StockTradingAction& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::RegSHORestriction& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::MarketParticipantPosition& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::MWCBDeclineLevel& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::MWCBStatus& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::IPOQuotingPeriodUpdate& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::LULDAuctionCollar& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::OperationalHalt& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::AddOrder& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::ExecuteOrder& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::CancelOrder& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::ReplaceOrder& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::NonCrossTrade& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::CrossTrade& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::BrokenTrade& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::NOII& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::RPII& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::DLCRPriceDiscovery& m);
-
-std::ostream& operator<<(std::ostream& out, const spec::MessageVariant& mv);
+inline std::ostream& operator<<(std::ostream& out, const spec::AddOrderWithMPID& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::ExecuteOrder& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::ExecuteOrderWithPrice& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::CancelOrder& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::DeleteOrder& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::ReplaceOrder& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::NonCrossTrade& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::CrossTrade& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::BrokenTrade& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::NetOrderImbalance& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::RetailPriceImprovement& m) {
+	out << to_string(m);
+	return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out, const spec::DLCRPriceDiscovery& m) {
+	out << to_string(m);
+	return out;
+}
 
 } // namespace itch::spec
 

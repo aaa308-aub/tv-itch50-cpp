@@ -1,20 +1,29 @@
 # DEVELOPER LOG
 This log is to explain the decisions I've made throughout the project. Please note that it's not meant to be read like documentation; it's more of a technical diary, so some parts may feel too lengthy. The dates are listed from newest to oldest in the ``DD.MM.YYYY`` format.
 
+### 26.07.2026
+
+* **Deprecated enum-classes:** Using ``enum class`` for strong type safety on day-one of this project was good on paper, but it causes a lot of developer friction for casting between types and writing wrapper-functions to cast after every operation. I had to weigh carefully whether to continue using ``enum class`` or to drop it completely, and I decided that my parser should simply read bytes and output bytes re-aligned and nothing more. It's much easier to maintain this way.
+
+* **Undone coupling of message types:** In the spec, you will see ``Add Order`` messages but with one extra field -- a different type named ``Add Order With MPID Distribution``. Similarly for ``Execute Order`` and ``Execute Order With Price``, or ``Cancel Order`` and ``Delete Order``. Initially I just coupled each pair into a single struct. This wasn't a catastrophic choice, but it complicates things unnecessarily and may confuse the user from their perspective.
+
+* **Tested type-erased handler with function pointers [DISCONTINUED]:** This was to hopefully prevent templating the whole ``Parser`` class and instead template only its constructor, containing the "template virus" so that the user doesn't have to. Sadly, the indirect function calls led to too much overhead: about 12% less throughput. So, meta-programming wins again.
+
 ### 20.07.2026
+
 * I came back to this project with greater understanding of memory thanks to other projects. I've done quite a lot of changes the past few days and I've listed them below. I look back at this document a lil' uncanny. On the one hand, it's always good to have a "technical footprint", but on the other, my understanding of a couple things wasn't great. Now that I understand virtual address spaces, page caching, branch predictions, what is and is not cheap to perform, etc. pretty well, reading this document backwards makes me cringe a little; thankfully, noone else is gonna see this... right?
 
-* **Achieved low-latency level speeds**: Through the implementations below, the parser became truly zero-copy and ultra-low-latency. Even copying every single message -- if requested by the user's handler (see below) -- results in over 2.5 GB/s throughput (warm cache, Google benchmark). In the base case where the handler does nothing at all, the parser walks a 13 GB sample in 2 seconds, or with a ~6.5 GB/s throughput.
+* **Achieved low-latency level speeds:** Through the implementations below, the parser became truly zero-copy and ultra-low-latency. Even copying every single message -- if requested by the user's handler (see below) -- results in over 2.5 GB/s throughput (warm cache, Google benchmark). In the base case where the handler does nothing at all, the parser walks a 13 GB sample in 2 seconds, or with a ~6.5 GB/s throughput.
 
-* **Moved to C++20**: To support the use of ``requires`` and easily find endianness of user's architecture.
+* **Moved to C++20:** To support the use of ``requires`` and easily find endianness of user's architecture.
 
-* **Implemented handler in a producer-consumer design**: Instead of eagerly parsing each message with all its fields and returning it to the user, now the user can just define a struct/class ``handler``, with methods having specific identifiers: ``onSystemEvent``, ``onStockDirectory``, ``onStockTradingAction`` etc., each taking a view-type struct (see below). These viewers allow the user to either parse only the fields they use, or create a struct using the ``unbox()`` method. As a compromise, I accepted that the parser will be templated and hence defined entirely in ``parser.hpp``. I've looked at many other solutions, and they're all too boilerplate-y and harder to maintain.
+* **Implemented handler in a producer-consumer design:** Instead of eagerly parsing each message with all its fields and returning it to the user, now the user can just define a struct/class ``handler``, with methods having specific identifiers: ``onSystemEvent``, ``onStockDirectory``, ``onStockTradingAction`` etc., each taking a view-type struct (see below). These viewers allow the user to either parse only the fields they use, or create a struct using the ``unbox()`` method. As a compromise, I accepted that the parser will be templated and hence defined entirely in ``parser.hpp``. I've looked at many other solutions, and they're all too boilerplate-y and harder to maintain.
 
-* **Removed use of ``std::variant`` and introduced viewers**: Returning and dispatching is far too costly, and I settled on concrete view-types (similar to ``std::string_view``), each owning a base pointer to the message as-is in the feed. Every viewer has field extraction methods (through ``memcpy`` and ``byteswap`` calls) taking as argument a pointer (base + offset). Crucially, since this pointer is always an r-value, the CPU can aggressively extract these fields simultaneously. The compiler may also be replacing the combinations of ``memcpy + byteswap`` and replacing them with a single instruction.
+* **Removed use of ``std::variant`` and introduced viewers:** Returning and dispatching is far too costly, and I settled on concrete view-types (similar to ``std::string_view``), each owning a base pointer to the message as-is in the feed. Every viewer has field extraction methods (through ``memcpy`` and ``byteswap`` calls) taking as argument a pointer (base + offset). Crucially, since this pointer is always an r-value, the CPU can aggressively extract these fields simultaneously. The compiler may also be replacing the combinations of ``memcpy + byteswap`` and replacing them with a single instruction.
 
-* **Enabled pageing lookahead in ``mmap``**: Just an oversight at the time I created this project.
+* **Enabled pageing lookahead in ``mmap``:** Just an oversight at the time I created this project. It's fixed now.
 
-* **Made all enum underlying types unsigned integers**: This was necessary to shed a lot of boilerplate and ``static_cast``s. It may have also led to some performance improvements.
+* **Made all enum underlying types unsigned integers [DEPRECATED]:** This was necessary to shed a lot of boilerplate and ``static_cast``s. It may have also led to some performance improvements.
 
 ### 25.12.2025 -- RELEASE DATE
 
@@ -45,7 +54,7 @@ using MemoryMap = MemoryMapPosix;
 
 The ``MemoryMap`` class-alias is read-only in both cases. It returns non-const pointers to ``const uint8_t``, so you can iterate through the mapped file but can't modify it.
 
-* **Avoiding bit-shifting and ``reinterpret_cast``:** bit- or byte-shifting isn't inherently bad, but I wanted to avoid it as much as possible during parsing. So instead I use ``std::memcpy`` and built-in byte-swapping functions (determined based on the compiler being used) which is not the same as byte-shifting; it's a single CPU instruction (``BSWAP``) under the hood. I also wanted to avoid ``reinterpret_cast`` and had to be careful when handling ``timestamp`` fields, which are 6-bytes long but must be saved in ``uint64_t``.
+* **Avoided bit-shifting and ``reinterpret_cast``:** bit- or byte-shifting isn't inherently bad, but I wanted to avoid it as much as possible during parsing. So instead I use ``std::memcpy`` and built-in byte-swapping functions (determined based on the compiler being used) which is not the same as byte-shifting; it's a single CPU instruction (``BSWAP``) under the hood. I also wanted to avoid ``reinterpret_cast`` and had to be careful when handling ``timestamp`` fields, which are 6-bytes long but must be saved in ``uint64_t``.
 
 * **Linux and big-endian architecture emulation:** I used WSL + QEMU to emulate Linux and big-endian systems, just to verify for correctness. As expected, ``std::memcpy`` works fine when mapping from the big-endian spec to a big-endian system and no additional steps need to be taken. I also verified for timestamp fields (6-byte fields saved in ``uint64_t``). ``MemoryMapPosix`` was also tested. Everything is working as intended.
 
@@ -53,11 +62,11 @@ The ``MemoryMap`` class-alias is read-only in both cases. It returns non-const p
 
 ### 21.12.2025
 
-* **Message struct padding:** Most parsers probably use compiler-specific attributes like ``__attribute__((packed))`` or ``[[gnu::packed]]``. It'll cause cache misalignment, but you can use ``std::memcpy`` to copy everything from the parsed message immediately into the struct. I chose not to do any of this because I prefer portability over compiler-specific micro-optimizations. I'm instead using ``std::memcpy`` on every field individually.
+* **Avoided message struct padding:** Most parsers probably use compiler-specific attributes like ``__attribute__((packed))`` or ``[[gnu::packed]]``. It'll cause cache misalignment, but you can use ``std::memcpy`` to copy everything from the parsed message immediately into the struct. I chose not to do any of this because I prefer portability over compiler-specific micro-optimizations. I'm instead using ``std::memcpy`` on every field individually.
 
 * **Finished parser with message parse functions:** I achieved a parsing speed of about 500 MB/s which is around the same read speed I got with ``std::ifstream``, so this could be (and probably is) a bottleneck. I'm going to switch to memory-mapping anyway.
 
-* **Callback semantics [DEPRECATED]:** Inspired by ``databento``'s API, I simplified callback by leaving it to the user in this fashion:
+* **Callback semantics:** Inspired by ``databento``'s API, I simplified callback by leaving it to the user in this fashion:
 
 ```c++
     while (parser.nextRecord()) {
@@ -92,9 +101,9 @@ void parseAddMessage(const bool withMPID) {
     
 This works and is safe, but dereferencing and iterating over the reference container becomes unreadable as a ``std::variant`` and will cost performance in all hot paths. Instead, we use ``std::array``'s contiguousness to our advantage with a ``char*`` pointer. Since our buffer logic is index-based, we must remember to adjust ``buffer_idx`` after parsing if read from the buffer, because ``buffer_idx`` was not used here. All this leads to an unideal design where some parts use ``buffer_idx`` while others iterate by pointer to ``char``, which can be confusing for readability. I'll consider simplifying this in the future.
 
-* **Added message structs by type and callback function for parser:** Initially, as I wrote in ``19.12.2025``, I wanted to parse only the message types related to adding/canceling/executing orders and "ignore but log" the rest. This is because I was only concerned with building the order book afterward. I believe now this is wrong and that my parser should parse all messages of all types and return them, without concerning itself with what will be done with those messages. Which is why I templated the parser with a ``Callback`` type parameter, which is any callable type. The parser will call it with ``operator()`` and with argument ``MessageStruct``, which is a ``std::variant`` of message structs I created by type: ``AddOrder``, ``CancelOrder``, ``NonCrossTrade``, etc. This way, the logic is all nice and separated between ``Parser`` and ``OrderBookMaster`` and I can easily make an interface class that joins the two cleanly.
+* **Added message structs by type and callback function for parser [DEPRECATED]:** Initially, as I wrote on ``19.12.2025``, I wanted to parse only the message types related to adding/canceling/executing orders and "ignore but log" the rest. This is because I was only concerned with building the order book afterward. I believe now this is wrong and that my parser should parse all messages of all types and return them, without concerning itself with what will be done with those messages. Which is why I templated the parser with a ``Callback`` type parameter, which is any callable type. The parser will call it with ``operator()`` and with argument ``MessageStruct``, which is a ``std::variant`` of message structs I created by type: ``AddOrder``, ``CancelOrder``, ``NonCrossTrade``, etc. This way, the logic is all nice and separated between ``Parser`` and ``OrderBookMaster`` and I can easily make an interface class that joins the two cleanly.
 
-* **Enums in ``tv_itch::spec``:** If I want to parse every single message, this means I have to respect the entire spec. Most message types have alpha fields (usually 1 character) that can take multiple values. I could've just made them all of type ``char`` in my message structs, but I decided to make corresponding enum classes instead and accept that the namespace will become quite bloated.
+* **Enums in ``tv_itch::spec`` [DEPRECATED]:** If I want to parse every single message, this means I have to respect the entire spec. Most message types have alpha fields (usually 1 character) that can take multiple values. I could've just made them all of type ``char`` in my message structs, but I decided to make corresponding enum classes instead and accept that the namespace will become quite bloated.
 
 ### 19.12.2025
 

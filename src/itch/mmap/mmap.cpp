@@ -16,8 +16,6 @@
 
 namespace itch::mmap {
 
-// Note that the memory-map classes below are read-only and the data() method returns
-// a pointer to const uint8_t.
 #ifdef _WIN32
 MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 	file = CreateFileA(

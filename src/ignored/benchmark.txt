@@ -1,235 +1,261 @@
 #include "benchmark/benchmark.h"
 #include "itch/parser.hpp"
+#include "itch/spec/messages.hpp"
 
 #include <cstdint>
 #include <string>
 
+namespace view = itch::spec::view;
+
 const std::string BENCHMARK_FILEPATH = "./01302020.NASDAQ_ITCH50";
 
-// Note: a mock run of the parser is done at every start of this process to make
-// sure the cache is warm. We want to benchmark the parser, not the disk.
-
 // This handler makes it so that Parser::callHandler's contents are eliminated as
-// dead code. The switch statement will be DCE'd too, hence the parser is just
-// walking the file cache.
+// dead code, including the switch, hence the parser is just "walking" the file.
 struct HandlerAllUndef {}; // HandlerAllUndef
 
-// This handler forces the switch statement to compile, but without any operation at
-// every case.
+// This handler forces the switch statement to compile but does nothing else.
 struct HandlerAllEmpty {
-	std::uint64_t i{1}; // DoNotOptimize(view) doesn't work, this is a cheap alternative.
+	std::uint64_t i = 1; // DoNotOptimize(view) doesn't work, this is a cheap alternative.
 
-    void onSystemEvent(const itch::spec::view::SystemEventView& view) noexcept {
+    void onSystemEvent(const view::SystemEventView v) noexcept {
     	i <<= 1;
         benchmark::DoNotOptimize(i);
     }
 
-    void onStockDirectory(const itch::spec::view::StockDirectoryView& view) noexcept {
+    void onStockDirectory(const view::StockDirectoryView v) noexcept {
     	i <<= 2;
         benchmark::DoNotOptimize(i);
     }
 
-    void onStockTradingAction(const itch::spec::view::StockTradingActionView& view) noexcept {
+    void onStockTradingAction(const view::StockTradingActionView v) noexcept {
     	i <<= 3;
         benchmark::DoNotOptimize(i);
     }
 
-    void onRegSHORestriction(const itch::spec::view::RegSHORestrictionView& view) noexcept {
+    void onRegSHORestriction(const view::RegSHORestrictionView v) noexcept {
     	i <<= 4;
         benchmark::DoNotOptimize(i);
     }
 
-    void onMarketParticipantPosition(const itch::spec::view::MarketParticipantPositionView& view) noexcept {
+    void onMarketParticipantPosition(const view::MarketParticipantPositionView v) noexcept {
     	i <<= 5;
         benchmark::DoNotOptimize(i);
     }
 
-    void onMWCBDeclineLevel(const itch::spec::view::MWCBDeclineLevelView& view) noexcept {
+    void onMWCBDeclineLevel(const view::MWCBDeclineLevelView v) noexcept {
     	i <<= 6;
         benchmark::DoNotOptimize(i);
     }
 
-    void onMWCBStatus(const itch::spec::view::MWCBStatusView& view) noexcept {
+    void onMWCBStatus(const view::MWCBStatusView v) noexcept {
     	i <<= 7;
         benchmark::DoNotOptimize(i);
     }
 
-    void onIPOQuotingPeriodUpdate(const itch::spec::view::IPOQuotingPeriodUpdateView& view) noexcept {
+    void onIPOQuotingPeriodUpdate(const view::IPOQuotingPeriodUpdateView v) noexcept {
     	i <<= 8;
         benchmark::DoNotOptimize(i);
     }
 
-    void onLULDAuctionCollar(const itch::spec::view::LULDAuctionCollarView& view) noexcept {
+    void onLULDAuctionCollar(const view::LULDAuctionCollarView v) noexcept {
     	i <<= 9;
         benchmark::DoNotOptimize(i);
     }
 
-    void onOperationalHalt(const itch::spec::view::OperationalHaltView& view) noexcept {
+    void onOperationalHalt(const view::OperationalHaltView v) noexcept {
     	i <<= 10;
         benchmark::DoNotOptimize(i);
     }
 
-    void onAddOrder(const itch::spec::view::AddOrderView& view) noexcept {
+    void onAddOrder(const view::AddOrderView v) noexcept {
     	i <<= 11;
         benchmark::DoNotOptimize(i);
     }
 
-    void onExecuteOrder(const itch::spec::view::ExecuteOrderView& view) noexcept {
-    	i <<= 12;
-        benchmark::DoNotOptimize(i);
+    void onAddOrderWithMPID(const view::AddOrderWithMPIDView v) noexcept {
+	   	i <<= 12;
+	       benchmark::DoNotOptimize(i);
     }
 
-    void onCancelOrder(const itch::spec::view::CancelOrderView& view) noexcept {
+    void onExecuteOrder(const view::ExecuteOrderView v) noexcept {
     	i <<= 13;
         benchmark::DoNotOptimize(i);
     }
 
-    void onReplaceOrder(const itch::spec::view::ReplaceOrderView& view) noexcept {
+    void onExecuteOrderWithPrice(const view::ExecuteOrderWithPriceView v) noexcept {
     	i <<= 14;
         benchmark::DoNotOptimize(i);
     }
 
-    void onNonCrossTrade(const itch::spec::view::NonCrossTradeView& view) noexcept {
+    void onCancelOrder(const view::CancelOrderView v) noexcept {
     	i <<= 15;
         benchmark::DoNotOptimize(i);
     }
 
-    void onCrossTrade(const itch::spec::view::CrossTradeView& view) noexcept {
+    void onDeleteOrder(const view::DeleteOrderView v) noexcept {
     	i <<= 16;
-        benchmark::DoNotOptimize(i);
+     	benchmark::DoNotOptimize(i);
     }
 
-    void onBrokenTrade(const itch::spec::view::BrokenTradeView& view) noexcept {
+    void onReplaceOrder(const view::ReplaceOrderView v) noexcept {
     	i <<= 17;
         benchmark::DoNotOptimize(i);
     }
 
-    void onNOII(const itch::spec::view::NOIIView& view) noexcept {
+    void onNonCrossTrade(const view::NonCrossTradeView v) noexcept {
     	i <<= 18;
         benchmark::DoNotOptimize(i);
     }
 
-    void onRPII(const itch::spec::view::RPIIView& view) noexcept {
+    void onCrossTrade(const view::CrossTradeView v) noexcept {
     	i <<= 19;
         benchmark::DoNotOptimize(i);
     }
 
-    void onDLCRPriceDiscovery(const itch::spec::view::DLCRPriceDiscoveryView& view) noexcept {
+    void onBrokenTrade(const view::BrokenTradeView v) noexcept {
     	i <<= 20;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onNetOrderImbalance(const view::NetOrderImbalanceView v) noexcept {
+    	i <<= 21;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onRetailPriceImprovement(const view::RetailPriceImprovementView v) noexcept {
+    	i <<= 22;
+        benchmark::DoNotOptimize(i);
+    }
+
+    void onDLCRPriceDiscovery(const view::DLCRPriceDiscoveryView v) noexcept {
+    	i <<= 23;
         benchmark::DoNotOptimize(i);
     }
 
 }; // HandlerAllEmpty
 
-// This handler makes an unbox() call on every message returned. Obviously this stalls
-// the parser significantly, so if you're doing something like this, do it async.
+// This handler makes an unbox() call on every message returned.
 struct HandlerAllCopy {
 
-    void onSystemEvent(const itch::spec::view::SystemEventView& view) noexcept {
-        auto msg = view.unbox();
+    void onSystemEvent(const view::SystemEventView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onStockDirectory(const itch::spec::view::StockDirectoryView& view) noexcept {
-        auto msg = view.unbox();
+    void onStockDirectory(const view::StockDirectoryView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onStockTradingAction(const itch::spec::view::StockTradingActionView& view) noexcept {
-        auto msg = view.unbox();
+    void onStockTradingAction(const view::StockTradingActionView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onRegSHORestriction(const itch::spec::view::RegSHORestrictionView& view) noexcept {
-        auto msg = view.unbox();
+    void onRegSHORestriction(const view::RegSHORestrictionView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onMarketParticipantPosition(const itch::spec::view::MarketParticipantPositionView& view) noexcept {
-        auto msg = view.unbox();
+    void onMarketParticipantPosition(const view::MarketParticipantPositionView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onMWCBDeclineLevel(const itch::spec::view::MWCBDeclineLevelView& view) noexcept {
-        auto msg = view.unbox();
+    void onMWCBDeclineLevel(const view::MWCBDeclineLevelView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onMWCBStatus(const itch::spec::view::MWCBStatusView& view) noexcept {
-        auto msg = view.unbox();
+    void onMWCBStatus(const view::MWCBStatusView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onIPOQuotingPeriodUpdate(const itch::spec::view::IPOQuotingPeriodUpdateView& view) noexcept {
-        auto msg = view.unbox();
+    void onIPOQuotingPeriodUpdate(const view::IPOQuotingPeriodUpdateView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onLULDAuctionCollar(const itch::spec::view::LULDAuctionCollarView& view) noexcept {
-        auto msg = view.unbox();
+    void onLULDAuctionCollar(const view::LULDAuctionCollarView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onOperationalHalt(const itch::spec::view::OperationalHaltView& view) noexcept {
-        auto msg = view.unbox();
+    void onOperationalHalt(const view::OperationalHaltView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onAddOrder(const itch::spec::view::AddOrderView& view) noexcept {
-        auto msg = view.unbox();
+    void onAddOrder(const view::AddOrderView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onExecuteOrder(const itch::spec::view::ExecuteOrderView& view) noexcept {
-        auto msg = view.unbox();
+    void onAddOrderWithMPID(const view::AddOrderWithMPIDView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onCancelOrder(const itch::spec::view::CancelOrderView& view) noexcept {
-        auto msg = view.unbox();
+    void onExecuteOrder(const view::ExecuteOrderView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onReplaceOrder(const itch::spec::view::ReplaceOrderView& view) noexcept {
-        auto msg = view.unbox();
+    void onExecuteOrderWithPrice(const view::ExecuteOrderWithPriceView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onNonCrossTrade(const itch::spec::view::NonCrossTradeView& view) noexcept {
-        auto msg = view.unbox();
+    void onCancelOrder(const view::CancelOrderView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onCrossTrade(const itch::spec::view::CrossTradeView& view) noexcept {
-        auto msg = view.unbox();
+    void onDeleteOrder(const view::DeleteOrderView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onBrokenTrade(const itch::spec::view::BrokenTradeView& view) noexcept {
-        auto msg = view.unbox();
+    void onReplaceOrder(const view::ReplaceOrderView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onNOII(const itch::spec::view::NOIIView& view) noexcept {
-        auto msg = view.unbox();
+    void onNonCrossTrade(const view::NonCrossTradeView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onRPII(const itch::spec::view::RPIIView& view) noexcept {
-        auto msg = view.unbox();
+    void onCrossTrade(const view::CrossTradeView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
-    void onDLCRPriceDiscovery(const itch::spec::view::DLCRPriceDiscoveryView& view) noexcept {
-        auto msg = view.unbox();
+    void onBrokenTrade(const view::BrokenTradeView v) noexcept {
+        auto msg = v.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onNetOrderImbalance(const view::NetOrderImbalanceView v) noexcept {
+        auto msg = v.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onRetailPriceImprovement(const view::RetailPriceImprovementView v) noexcept {
+        auto msg = v.unbox();
+        benchmark::DoNotOptimize(msg);
+    }
+
+    void onDLCRPriceDiscovery(const view::DLCRPriceDiscoveryView v) noexcept {
+        auto msg = v.unbox();
         benchmark::DoNotOptimize(msg);
     }
 
 }; // HandlerAllCopy
 
-// There's a lot of potential redundancy in these benchmarks, but I guess we're not
-// trying to write good code so much as preventing the compiler from doing its job.
-
+// A mock run of the parser is done at every start of this process to fill the
+// page cache first. We want to benchmark the parser, not the disk I/O.
 static void warmCache() {
 	static bool is_already_warmed = false;
 	if (is_already_warmed) {
@@ -309,5 +335,5 @@ static void benchmarkAllCopy(benchmark::State& state) {
 
 BENCHMARK(benchmarkAllUndef);
 BENCHMARK(benchmarkAllEmpty);
-BENCHMARK(benchmarkAllCopy) ;
-BENCHMARK_MAIN()            ;
+BENCHMARK(benchmarkAllCopy);
+BENCHMARK_MAIN();

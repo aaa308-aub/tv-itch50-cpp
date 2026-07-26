@@ -2,9 +2,9 @@
 ## Introduction
 This is an ultra-low-latency, zero-copy parser for the [Nasdaq TotalView-ITCH 5.0 data feed](https://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/NQTVITCHSpecification.pdf): a proprietary data feed and protocol providing [Nasdaq](https://www.google.com/search?q=What+is+Nasdaq)'s full order depth using their ITCH format.
 
-Since ITCH covers thousands of stocks listed across Nasdaq, many of which have a high market cap, a single day of ITCH data results in very large data files -- typically dozens of gigabytes. If you want to process this feed, you need high throughput (see benchmarks near end of README).
+Since ITCH covers thousands of stocks listed across Nasdaq, many of which have a high market cap, a single day of ITCH data results in very large data files -- typically dozens of gigabytes. If you want to process this feed, you need high throughput (see benchmarks at end of README).
 
-[Data samples here](https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/).
+[Data samples here](https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/). For recent changes, [see here](devlog.md).
 
 ## Requirements
 C++20 or above is required, with CMake 3.20 or above if you're using CMake. **This library has no third-party library requirements or even compiler extensions.** Support for both Windows and Linux. Should theoretically work on macOS, but no tests were done there.
@@ -64,20 +64,23 @@ cmake --build your-build-folder
 
 // Define a Handler struct/class. A basic example:
 struct myHandler {
-		int myVar = 0;
-		std::vector<itch::spec::AddOrder> myArr;
+		int myVar = 0; // The handler doesn't have to be stateless.
 	
-		// For each message type, say "Xyz", the handler method MUST be
-		// named "onXyz", return void, and take a viewer of type "XyzView".
-		void onAddOrder( const itch::spec::view::AddOrderView& v ) {
+		// For each message type, say "Xyz", the handler method must match
+		// this signature exactly:
+		// void onXyz( const itch::spec::view::XyzView v );
+		// Example for AddOrder:
+		void onAddOrder( const itch::spec::view::AddOrderView v ) {
 				using namespace itch::ios;
 		
 				// Look at AddOrderView definition for field-parsing methods.
 				myVar += v.shares();
-				// Or parse the entire message as a struct using unbox.
-				myArr.emplace_back( v.unbox() );
-				std::cout << myArr.back() << "\n";
-				// Obviously this is too expensive, but just an example.
+				// Or copy the entire message in a struct using the unbox method.
+				const auto msg = v.unbox();
+				std::cout << msg << "\n";
+				// The separator between fields during printing is comma by default,
+				// but you can change it. For example, to separate with tab:
+				std::cout << to_string(msg, '\t') << "\n";
 		}
 	
 		// If you don't define the rest, the parser simply skips them.
@@ -86,8 +89,8 @@ struct myHandler {
 int main() {
 		using namespace itch::ios;
 	
-		// Give filepath as string. Use forward-slashes regardless of OS
-		// used. Note: place entire filepath rather than relative.
+		// For filepath, use forward-slashes regardless of what OS you're on.
+		// It's safer to use a full directory rather than relative.
 		const std::string myPath = "C:/Users/abdal/Downloads/S.NASDAQ_ITCH50";
 		myHandler h;
 		// Pass both filepath and handler. Notice: the parser is a templated
@@ -95,23 +98,29 @@ int main() {
 		// reference, so it MUST outlive the parser.
 		itch::Parser p( myPath, h );
 	
-		// Use .next method to move to next message. Returns true/false if
-		// EOF or not. You can also use p.eof method to check.
+		// Use .next method to iterate to the next message.
 		while ( p.next() ) {
 				p.callHandler(); // You must call handler explicitly.
-		
-		    // You cannot see messages from here -- only your handler.
+
+				// You cannot see messages from here -- only your Handler can.
+
+				// Checking EOF is not required, since .next returns false when
+				// EOF is reached. But you can still do so anyway:
+				if ( p.eof() ) break;
 		}
 }
 ```
 
 ## Benchmarks
 Notice:
-1. Benchmarks are done through the [Google benchmark library](https://github.com/google/benchmark). Benchmark script is copied in a text file saved in ``src/ignored/benchmark.txt``. Sample size is 13 GB. CPU is my own: ``Intel Core i7-8700 CPU @ 3.20GHz × 6``.
-2. These benchmarks find the actual throughput of the parser, not the disk's ability to fill the page cache quickly. Hence the cache is already warmed up on every benchmark i.e. the entire file is already cached in RAM.
+1. Benchmarks are done through the [Google benchmark library](https://github.com/google/benchmark). Benchmark script is copied in a text file saved in ``src/ignored/``, along with its ``CMakeLists``.
+2. Sample size is 13 GB or about 423.3 million messages.
+3. CPU is my own: ``Intel Core i7-8700 CPU @ 3.20GHz × 6``
+4. A mock run is done before every benchmark to fill the page cache. We benchmark the actual throughput, not the disk or I/O. With a high-end NVMe SSD, the parser still won't be I/O-bound.
+5. ``msg/s`` implies average message per second. The average message is 30.712 bytes long **including the 2-byte length field**.
 
-``BenchmarkAllUndef (~6.2 GB/s):`` Benchmark with an empty handler -- no dispatch at every message.\
-``BenchmarkAllEmpty (~3.4 GB/s):`` Benchmark with an empty handler but still dispatch (switch). This drop is not surprising; the parser's only job in ``BenchmarkAllUndef`` is to just "walk" the file cache, so a switch is relatively expensive now -- even if replaced with a jump table.\
-``BenchmarkAllCopy (~2.6 GB/s):`` Benchmark with a handler that copies every single message -- all fields.
+``BenchmarkAllUndef (~6.2 GB/s or ~202M msg/s):`` Benchmark with an empty handler -- no dispatch at every message.\
+``BenchmarkAllEmpty (~3.4 GB/s or ~111M msg/s):`` Benchmark with an empty handler but still dispatch (switch). This drop is not surprising; the parser's job in ``BenchmarkAllUndef`` is to just "walk" the file cache, so a switch is relatively expensive now -- even if replaced with a jump table.\
+``BenchmarkAllCopy (~2.6 GB/s or ~85M msg/s):  `` Benchmark with a handler that copies every single message -- all fields.
 
 ![](assets/benchmark_sc.png)

@@ -60,14 +60,7 @@ template <typename T>
 	return val;
 }
 
-template <typename T>
-[[nodiscard]] inline T read_be_adv(const std::uint8_t*& ptr) noexcept {
-	T val = read_be<T>(ptr);
-	ptr += sizeof(T);
-	return val;
-}
-
-[[nodiscard]] inline std::uint64_t read_be_48b(const std::uint8_t* ptr) noexcept {
+[[nodiscard]] inline std::uint64_t read_be_u48(const std::uint8_t* ptr) noexcept {
 	std::uint64_t val = 0;
 	std::memcpy(&val, ptr, 6);
 
@@ -76,27 +69,6 @@ template <typename T>
 	}
 
 	return val >> 16;
-}
-
-[[nodiscard]] inline std::uint64_t read_be_48b_adv(const std::uint8_t*& ptr) noexcept {
-	std::uint64_t val = read_be_48b(ptr);
-	ptr += 6;
-	return val;
-}
-
-template <typename T>
-[[nodiscard]] inline T read_be_enum(const std::uint8_t* ptr) noexcept {
-	static_assert(std::is_enum_v<T>);
-	using ut = std::underlying_type_t<T>;
-	ut val = read_be<ut>(ptr);
-	return static_cast<T>(val);
-}
-
-template <typename T>
-[[nodiscard]] inline T read_be_enum_adv(const std::uint8_t*& ptr) noexcept {
-	T val = read_be_enum<T>(ptr);
-	ptr += sizeof(T);
-	return val;
 }
 
 } // namespace itch::util

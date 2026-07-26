@@ -2,7 +2,6 @@
 #define TV_ITCH50_CPP_PARSER_HPP
 
 #include "itch/mmap/mmap.hpp"
-#include "itch/spec/alpha_fields.hpp"
 #include "itch/spec/messages.hpp"
 #include "itch/util/util.hpp"
 
@@ -12,7 +11,7 @@
 
 namespace itch {
 
-template <typename Handler>
+template <class Handler>
 class Parser {
 
 private:
@@ -20,7 +19,7 @@ private:
 	const mmap::MemoryMap mmap;
 	const std::uint8_t* mmap_ptr;
 	const std::uint8_t* mmap_end;
-	std::uint8_t msg_len;
+	std::uint16_t msg_len;
 	bool is_eof;
 
 public:
@@ -43,15 +42,12 @@ public:
 	bool next() noexcept {
 		if (!is_eof) {
 			mmap_ptr += msg_len;
-			msg_len = static_cast<std::uint8_t>(
-				util::read_be_adv<std::uint16_t>(mmap_ptr));
+			msg_len = util::read_be<std::uint16_t>(mmap_ptr);
+			mmap_ptr += 2;
 
 			if (mmap_ptr + msg_len == mmap_end) {
 				is_eof = true;
 			}
-
-			// Chose not to call handler here and instead let the user explicitly
-			// do it, in case they want to do something in-between handler callbacks.
 
 			return true;
 		}
@@ -59,14 +55,12 @@ public:
 		return false;
 	}
 
-	void callHandler() noexcept {
-		using namespace spec;
+	void callHandler() const noexcept {
 		using namespace spec::view;
 
-		using msgT = MessageType;
-		const msgT curr_msg_type = util::read_be_enum<msgT>(mmap_ptr);
+		const auto curr_msg_type = util::read_be<std::uint8_t>(mmap_ptr);
 		switch (curr_msg_type) {
-			case msgT::SystemEvent: { // Enclosures required to keep re-defining type alias.
+			case 'S': {
 				using msgV = SystemEventView;
 				if constexpr (requires (Handler h, msgV v)
 				              {h.onSystemEvent(v);}) {
@@ -74,8 +68,7 @@ public:
 				}
 				break;
 			}
-
-			case msgT::StockDirectory: {
+			case 'R': {
 				using msgV = StockDirectoryView;
 				if constexpr (requires (Handler h, msgV v)
 				              {h.onStockDirectory(v);}) {
@@ -83,17 +76,15 @@ public:
 				}
 				break;
 			}
-
-		    case msgT::StockTradingAction: {
+		    case 'H': {
 	            using msgV = StockTradingActionView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onStockTradingAction(v);}) {
 	                handler.onStockTradingAction(msgV{mmap_ptr});
 	            }
 	            break;
-		        }
-
-	        case msgT::RegSHORestriction: {
+			}
+			case 'Y': {
 	            using msgV = RegSHORestrictionView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onRegSHORestriction(v);}) {
@@ -101,8 +92,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::MarketParticipantPosition: {
+			case 'L': {
 	            using msgV = MarketParticipantPositionView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onMarketParticipantPosition(v);}) {
@@ -110,8 +100,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::MWCBDeclineLevel: {
+   			case 'V': {
 	            using msgV = MWCBDeclineLevelView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onMWCBDeclineLevel(v);}) {
@@ -119,8 +108,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::MWCBStatus: {
+      		case 'W': {
 	            using msgV = MWCBStatusView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onMWCBStatus(v);}) {
@@ -128,8 +116,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::IPOQuotingPeriodUpdate: {
+        	case 'K': {
 	            using msgV = IPOQuotingPeriodUpdateView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onIPOQuotingPeriodUpdate(v);}) {
@@ -137,8 +124,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::LULDAuctionCollar: {
+         	case 'J': {
 	            using msgV = LULDAuctionCollarView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onLULDAuctionCollar(v);}) {
@@ -146,8 +132,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::OperationalHalt: {
+          	case 'h': {
 	            using msgV = OperationalHaltView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onOperationalHalt(v);}) {
@@ -156,61 +141,55 @@ public:
 	            break;
 	        }
 
-	        case msgT::AddOrderWithoutMPID: {
+           	case 'A': {
 	            using msgV = AddOrderView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onAddOrder(v);}) {
-	                handler.onAddOrder(msgV{mmap_ptr, false});
+	                handler.onAddOrder(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::AddOrderWithMPID: {
-	            using msgV = AddOrderView;
+            case 'F': {
+	            using msgV = AddOrderWithMPIDView;
 	            if constexpr (requires (Handler h, msgV v)
-							  {h.onAddOrder(v);}) {
-	                handler.onAddOrder(msgV{mmap_ptr, true});
+							  {h.onAddOrderWithMPID(v);}) {
+	                handler.onAddOrderWithMPID(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::ExecuteOrder: {
+            case 'E': {
 	            using msgV = ExecuteOrderView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onExecuteOrder(v);}) {
-	                handler.onExecuteOrder(msgV{mmap_ptr, false});
+	                handler.onExecuteOrder(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::ExecuteOrderWithPrice: {
-	            using msgV = ExecuteOrderView;
+            case 'C': {
+	            using msgV = ExecuteOrderWithPriceView;
 	            if constexpr (requires (Handler h, msgV v)
-							  {h.onExecuteOrder(v);}) {
-	                handler.onExecuteOrder(msgV{mmap_ptr, true});
+							  {h.onExecuteOrderWithPrice(v);}) {
+	                handler.onExecuteOrderWithPrice(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::CancelOrder: {
+            case 'X': {
 	            using msgV = CancelOrderView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onCancelOrder(v);}) {
-	                handler.onCancelOrder(msgV{mmap_ptr, false});
+	                handler.onCancelOrder(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::DeleteOrder: {
-	            using msgV = CancelOrderView;
+            case 'D': {
+	            using msgV = DeleteOrderView;
 	            if constexpr (requires (Handler h, msgV v)
-							  {h.onCancelOrder(v);}) {
-	                handler.onCancelOrder(msgV{mmap_ptr, true});
+							  {h.onDeleteOrder(v);}) {
+	                handler.onDeleteOrder(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::ReplaceOrder: {
+            case 'U': {
 	            using msgV = ReplaceOrderView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onReplaceOrder(v);}) {
@@ -218,8 +197,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::NonCrossTrade: {
+            case 'P': {
 	            using msgV = NonCrossTradeView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onNonCrossTrade(v);}) {
@@ -227,8 +205,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::CrossTrade: {
+            case 'Q': {
 	            using msgV = CrossTradeView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onCrossTrade(v);}) {
@@ -236,8 +213,7 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::BrokenTrade: {
+            case 'B': {
 	            using msgV = BrokenTradeView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onBrokenTrade(v);}) {
@@ -245,26 +221,23 @@ public:
 	            }
 	            break;
 	        }
-
-	        case msgT::NOII: {
-	            using msgV = NOIIView;
+            case 'I': {
+	            using msgV = NetOrderImbalanceView;
 	            if constexpr (requires (Handler h, msgV v)
-							  {h.onNOII(v);}) {
-	                handler.onNOII(msgV{mmap_ptr});
+							  {h.onNetOrderImbalance(v);}) {
+	                handler.onNetOrderImbalance(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::RPII: {
-	            using msgV = RPIIView;
+            case 'N': {
+	            using msgV = RetailPriceImprovementView;
 	            if constexpr (requires (Handler h, msgV v)
-							  {h.onRPII(v);}) {
-	                handler.onRPII(msgV{mmap_ptr});
+							  {h.onRetailPriceImprovement(v);}) {
+	                handler.onRetailPriceImprovement(msgV{mmap_ptr});
 	            }
 	            break;
 	        }
-
-	        case msgT::DLCRPriceDiscovery: {
+            case 'O': {
 	            using msgV = DLCRPriceDiscoveryView;
 	            if constexpr (requires (Handler h, msgV v)
 							  {h.onDLCRPriceDiscovery(v);}) {
