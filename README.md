@@ -60,7 +60,6 @@ cmake --build your-build-folder
 
 #include <iostream>
 #include <string>
-#include <vector>
 
 // Define a Handler struct/class. A basic example:
 struct myHandler {
