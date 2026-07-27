@@ -629,7 +629,7 @@ struct IPOQuotingPeriodUpdateView {
         return util::read_be<std::uint32_t>(base + 19);
     }
 
-    std::uint8_t ipo_quotation_release_qualifier() const noexcept {
+    std::uint8_t ipo_quotation_release_flag() const noexcept {
         return util::read_be<std::uint8_t>(base + 23);
     }
 
@@ -645,7 +645,7 @@ struct IPOQuotingPeriodUpdateView {
             ipo_price(),
             stock_locate(),
             tracking_number(),
-            ipo_quotation_release_qualifier()
+            ipo_quotation_release_flag()
         };
     }
 
