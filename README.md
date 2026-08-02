@@ -63,50 +63,50 @@ cmake --build your-build-folder
 
 // Define a Handler struct/class. A basic example:
 struct myHandler {
-		int myVar = 0; // The handler doesn't have to be stateless.
-	
-		// For each message type, say "Xyz", the handler method must match
-		// this signature exactly:
-		// void onXyz( const itch::spec::view::XyzView v );
-		// Example for AddOrder:
-		void onAddOrder( const itch::spec::view::AddOrderView v ) {
-				using namespace itch::ios;
-		
-				// Look at AddOrderView definition for field-parsing methods.
-				myVar += v.shares();
-				// Or copy the entire message in a struct using the unbox method.
-				const auto msg = v.unbox();
-				std::cout << msg << "\n";
-				// The separator between fields during printing is comma by default,
-				// but you can change it. For example, to separate with tab:
-				std::cout << to_string(msg, '\t') << "\n";
-		}
-	
-		// If you don't define the rest, the parser simply skips them.
+	int myVar = 0; // The handler doesn't have to be stateless.
+
+	// For each message type, say "Xyz", the handler method must match
+	// this signature exactly:
+	// void onXyz( const itch::spec::view::XyzView v );
+	// Example for AddOrder:
+	void onAddOrder( const itch::spec::view::AddOrderView v ) {
+		using namespace itch::ios;
+
+		// Look at AddOrderView definition for field-parsing methods.
+		myVar += v.shares();
+		// Or copy the entire message in a struct using the unbox method.
+		const auto msg = v.unbox();
+		std::cout << msg << "\n";
+		// The separator between fields during printing is comma by default,
+		// but you can change it. For example, to separate with tab:
+		std::cout << to_string(msg, '\t') << "\n";
+	}
+
+	// If you don't define the rest, the parser simply skips them.
 };
 
 int main() {
-		using namespace itch::ios;
-	
-		// For filepath, use forward-slashes regardless of what OS you're on.
-		// It's safer to use a full directory rather than relative.
-		const std::string myPath = "C:/Users/abdal/Downloads/S.NASDAQ_ITCH50";
-		myHandler h;
-		// Pass both filepath and handler. Notice: the parser is a templated
-		// class. It can accept any handler. The handler is passed by
-		// reference, so it MUST outlive the parser.
-		itch::Parser p( myPath, h );
-	
-		// Use .next method to iterate to the next message.
-		while ( p.next() ) {
-				p.callHandler(); // You must call handler explicitly.
+	using namespace itch::ios;
 
-				// You cannot see messages from here -- only your Handler can.
+	// For filepath, use forward-slashes regardless of what OS you're on.
+	// It's safer to use a full directory rather than relative.
+	const std::string myPath = "C:/Users/abdal/Downloads/S.NASDAQ_ITCH50";
+	myHandler h;
+	// Pass both filepath and handler. Notice: the parser is a templated
+	// class. It can accept any handler. The handler is passed by
+	// reference, so it MUST outlive the parser.
+	itch::Parser p( myPath, h );
 
-				// Checking EOF is not required, since .next returns false when
-				// EOF is reached. But you can still do so anyway:
-				if ( p.eof() ) break;
-		}
+	// Use .next method to iterate to the next message.
+	while ( p.next() ) {
+		p.callHandler(); // You must call handler explicitly.
+
+		// You cannot see messages from here -- only your Handler can.
+
+		// Checking EOF is not required, since .next returns false when
+		// EOF is reached. But you can still do so anyway:
+		if ( p.eof() ) break;
+	}
 }
 ```
 
