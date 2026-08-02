@@ -68,6 +68,6 @@ using MemoryMap = MemoryMapWindows;
 using MemoryMap = MemoryMapPosix;
 #endif
 
-} // namespace mmap
+} // namespace itch::mmap
 
 #endif // TV_ITCH50_CPP_MMAP_HPP
