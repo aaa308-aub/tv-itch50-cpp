@@ -8,9 +8,9 @@
 #include <cstdint>
 #include <windows.h>
 #else
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
 #endif // _WIN32
 
@@ -19,13 +19,13 @@ namespace itch::mmap {
 #ifdef _WIN32
 MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 	file = CreateFileA(
-	path.c_str(),
-	GENERIC_READ,
-	FILE_SHARE_READ,
-	nullptr,
-	OPEN_EXISTING,
-	FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
-	nullptr
+		path.c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
+		nullptr
 	);
 	if (file == INVALID_HANDLE_VALUE)
 		throw std::runtime_error("MemoryMapWindows error: CreateFile failed");
@@ -47,7 +47,7 @@ MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 		0,
 		0,
 		nullptr
-		);
+	);
 	if (!mapping) {
 		CloseHandle(file);
 		throw std::runtime_error("MemoryMapWindows error: CreateFileMapping failed");
@@ -59,7 +59,7 @@ MemoryMapWindows::MemoryMapWindows(const std::string& path) {
 		0,
 		0,
 		0
-		);
+	);
 	if (!data_) {
 		CloseHandle(mapping);
 		CloseHandle(file);
